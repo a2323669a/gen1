@@ -62,7 +62,7 @@ class GAN:
           plt.imshow(predictions[i, :, :, 0] * 255., cmap='gray')
           plt.axis('off')
 
-      plt.savefig('./result/mnist/epoch{:04d}.png'.format(epoch))
+      plt.savefig('./result/anime/epoch{:04d}.png'.format(epoch))
       plt.show()
 
     def discriminator_model(self) -> keras.Sequential:
@@ -127,9 +127,9 @@ class GAN:
         for epoch in range(initial_epoch, epochs):
             start = time.time()
 
-            for i, img_batch in enumerate(self.image_iter):
+            for i in range(self.batch_count):
+                img_batch = self.image_iter.next()
                 noise_batch = tf.random.normal(shape=(self.batch_size, self.input_dim))
-                #img_batch = tf.convert_to_tensor(img_batch)
 
                 with tf.GradientTape() as d_tape, tf.GradientTape() as g_tape:
                     fake_batch = self.generator(noise_batch, training=True)
@@ -147,9 +147,10 @@ class GAN:
                 self.d_optimizer.apply_gradients(zip(d_grad, self.discriminator.trainable_variables))
                 self.g_optimizer.apply_gradients(zip(g_grad, self.generator.trainable_variables))
 
-                print("{}/{} d_loss:{}, g_loss:{}".format(i, self.batch_count, d_loss, g_loss))
+                print("{}/{} d_loss:{}, g_loss:{}".format(i+1, self.batch_count, d_loss, g_loss))
 
             self.generate_and_save_images(self.generator,epoch + 1, self.noise)
+            self.image_iter.on_epoch_end() #shuffle image
             self.epoch = epoch + 1
 
             self.checkpoint.save(file_prefix = os.path.join(self.checkpoint_dir, "{}".format(epoch+1)))
